@@ -5,11 +5,13 @@ defmodule Ex2ms do
     :and, :or, :not, :xor, :andalso, :orelse ]
 
   @guard_function @bool_function ++ [
-    :abs, :element, :hd, :length, :node, :round, :size, :tl, :trunc, :+, :-, :*,
+    :abs, :element, :hd, :count, :node, :round, :size, :tl, :trunc, :+, :-, :*,
     :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=, :===,
     :==, :!==, :!=, :self ]
 
   @elixir_erlang [ ===: :"=:=", !==: :"=/=", <=: :"=<" ]
+
+  defrecord State, vars: [], count: 0
 
   defmacro test_fun(block) do
     Macro.escape(block)
@@ -32,70 +34,81 @@ defmodule Ex2ms do
   end
 
   defp translate_fun({ head, _, body }) do
-    { head, conds, vars } = translate_head(head)
-    body = translate_body(body, vars)
+    { head, conds, state } = translate_head(head)
+    body = translate_body(body, state)
     { head, conds, body }
   end
 
-  defp translate_conds(_, vars) do
+  defp translate_body(_, _state) do
     []
   end
 
-  defp translate_body(_, _vars) do
+  defp translate_conds(_, _state) do
     []
   end
 
   defp translate_head([{ :when, _, [param, conds] }]) do
-    { head, vars } = translate_params(param)
-    conds= translate_conds(conds, vars)
-    { head, conds, vars }
+    { head, state } = translate_param(param)
+    conds= translate_conds(conds, state)
+    { head, conds, state }
   end
 
   defp translate_head([param]) do
-    { head, vars } = translate_params(param)
-    { head, [], vars }
+    { head, state } = translate_param(param)
+    { head, [], state }
   end
 
   defp translate_param(param) do
-    case param do
-      { var, _, nil } when is_atom(var) -> nil
-      { :{}, _, list } when is_list(list) -> nil
-      { _, _ } -> nil
+    { param, state } = case param do
+      { :=, _, [{ var, _, nil }, param] } when is_atom(var) ->
+        { param, State[].vars([{ var, "$_" }]) }
+      { :=, _, [param, { var, _, nil }] } when is_atom(var) ->
+        { param, State[].vars([{ var, "$_" }]) }
+      { var, _, nil } when is_atom(var) ->
+        { param, State[] }
+      { :{}, _, list } when is_list(list) ->
+        { param, State[] }
+      { _, _ } ->
+        { param, State[] }
       _ -> raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
     end
-    do_translate_param(param, [])
+    do_translate_param(param, state)
   end
 
-  defp do_translate_param({ :_, _, nil }, vars) do
-    { :_, vars }
+  defp do_translate_param({ :_, _, nil }, state) do
+    { :_, state }
   end
 
-  defp do_translate_param({ var, _, nil }, vars) when is_atom(var) do
-    if index = Enum.find_index(vars, var == &1) do
-      { :"$#{index+1}", vars }
+  defp do_translate_param({ var, _, nil }, state) when is_atom(var) do
+    if match_var = state.vars[var] do
+      { :"#{match_var}", state }
     else
-      { :"$#{length(vars)+1}", vars ++ [var] }
+      match_var = "$#{state.count+1}"
+      state = state
+        .update_vars([{var, match_var} | &1])
+        .update_count(&1 + 1)
+      { :"#{match_var}", state }
     end
   end
 
-  defp do_translate_param({ left, right }, vars) do
-    do_translate_param({ :{}, [], [left, right] }, vars)
+  defp do_translate_param({ left, right }, state) do
+    do_translate_param({ :{}, [], [left, right] }, state)
   end
 
-  defp do_translate_param({ :{}, _, list }, vars) when is_list(list) do
-    { list, vars } = Enum.map_reduce(list, vars, do_translate_param(&1, &2))
-    { list_to_tuple(list), vars }
+  defp do_translate_param({ :{}, _, list }, state) when is_list(list) do
+    { list, state } = Enum.map_reduce(list, state, do_translate_param(&1, &2))
+    { list_to_tuple(list), state }
   end
 
-  defp do_translate_param(list, vars) when is_list(list) do
-    Enum.map_reduce(list, vars, do_translate_param(&1, &2))
+  defp do_translate_param(list, state) when is_list(list) do
+    Enum.map_reduce(list, state, do_translate_param(&1, &2))
   end
 
-  defp do_translate_param(literal, vars) when is_literal(literal) do
-    { literal, vars }
+  defp do_translate_param(literal, state) when is_literal(literal) do
+    { literal, state }
   end
 
-  defp do_translate_param(unknown, _vars) do
+  defp do_translate_param(unknown, _state) do
     raise ArgumentError, message: "expected term, got `#{inspect unknown}`"
   end
 end
