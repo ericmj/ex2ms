@@ -1,15 +1,15 @@
 defmodule Ex2ms do
   @bool_functions [
     :is_atom, :is_float, :is_integer, :is_list, :is_number, :is_pid, :is_port,
-    :is_reference, :is_tuple, :is_binary, :is_function, :is_record,
-    :and, :or, :not, :xor, :andalso, :orelse ]
+    :is_reference, :is_tuple, :is_binary, :is_function, :is_record, :and, :or,
+    :not, :xor ]
 
   @guard_functions @bool_functions ++ [
     :abs, :element, :hd, :count, :node, :round, :size, :tl, :trunc, :+, :-, :*,
     :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=, :===,
     :==, :!==, :!=, :self ]
 
-  @elixir_erlang [ ===: :"=:=", !==: :"=/=", <=: :"=<" ]
+  @elixir_erlang [ ===: :"=:=", !==: :"=/=", <=: :"=<", and: :andalso, or: :orelse ]
 
   Enum.map(@guard_functions, fn(atom) ->
     defp is_guard_function(unquote(atom)), do: true
@@ -23,12 +23,8 @@ defmodule Ex2ms do
 
   defrecord State, vars: [], count: 0
 
-  defmacro test_fun(block) do
-    Macro.escape(block)
-  end
-
   defmacro fun([do: { :->, _, funs }]) do
-    Enum.map(funs, fn(fun) -> translate_fun(fun) |> Macro.escape end)
+    Enum.map(funs, fn(fun) -> translate_fun(fun) end) |> Macro.escape
   end
 
   defmacro fun(_) do
@@ -79,7 +75,7 @@ defmodule Ex2ms do
       match_fun = map_elixir_erlang(fun)
       [match_fun|match_args] |> list_to_tuple
     else
-      raise ArgumentError, message: "illegal function `#{fun}` in matchspec"
+      raise ArgumentError, message: "illegal expression in matchspec"
     end
   end
 
@@ -104,6 +100,10 @@ defmodule Ex2ms do
   defp translate_head([param]) do
     { head, state } = translate_param(param)
     { head, [], state }
+  end
+
+  defp translate_head(_) do
+    raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
   end
 
   defp translate_param(param) do
@@ -156,7 +156,7 @@ defmodule Ex2ms do
     { literal, state }
   end
 
-  defp do_translate_param(unknown, _state) do
-    raise ArgumentError, message: "expected term, got `#{inspect unknown}`"
+  defp do_translate_param(_, _state) do
+    raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
   end
 end
