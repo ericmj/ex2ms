@@ -75,4 +75,6 @@ defmodule Ex2msTest do
       delay_compile(fun do x -> abc(x) end)
     end
   end
+
+  doctest Ex2ms
 end

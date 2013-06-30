@@ -1,4 +1,9 @@
 defmodule Ex2ms do
+  @moduledoc """
+  This module provides the `Ex2ms.fun/2` macro for translating Elixir pattern
+  matches to match specifications.
+  """
+
   @bool_functions [
     :is_atom, :is_float, :is_integer, :is_list, :is_number, :is_pid, :is_port,
     :is_reference, :is_tuple, :is_binary, :is_function, :is_record, :and, :or,
@@ -27,6 +32,14 @@ defmodule Ex2ms do
     Enum.map(funs, fn(fun) -> translate_fun(fun) end) |> Macro.escape
   end
 
+  @doc """
+  Translates a pattern match to a match specification.
+
+  ## Examples
+      iex> Ex2ms.fun do {x, y} -> x == 2 end
+      [{ { :"$1", :"$2" }, [], [{ :==, :"$1", 2 }] }]
+  """
+  @spec fun((any -> any)) :: :ets.match_spec
   defmacro fun(_) do
     raise ArgumentError, message: "invalid args to matchspec"
   end
