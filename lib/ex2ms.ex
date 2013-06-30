@@ -1,7 +1,7 @@
 defmodule Ex2ms do
   @moduledoc """
-  This module provides the `Ex2ms.fun/2` macro for translating Elixir pattern
-  matches to match specifications.
+  This module provides the `Ex2ms.fun/2` macro for translating Elixir functions
+  to match specifications.
   """
 
   @bool_functions [
@@ -33,7 +33,7 @@ defmodule Ex2ms do
   end
 
   @doc """
-  Translates a pattern match to a match specification.
+  Translates an anonymous function to a match specification.
 
   ## Examples
       iex> Ex2ms.fun do {x, y} -> x == 2 end
