@@ -16,6 +16,16 @@ defmodule Ex2msTest do
            [{{ :"$1", :"$2" }, [], [:"$_"] }]
   end
 
+  test "gproc" do
+    assert (fun do {{:n, :l, {:client, id}}, pid, _} -> {id, pid} end) ==
+           [{{{:n, :l, {:client, :"$1"}}, :"$2", :_}, [], [{{:"$1", :"$2"}}]}]
+  end
+
+  test "gproc with 3 vars" do
+    assert (fun do {{:n, :l, {:client, id}}, pid, third} -> {id, pid, third} end) ==
+           [{{{:n, :l, {:client, :"$1"}}, :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}]
+  end
+
   test "cond" do
     assert (fun do x when true -> 0 end) ==
            [{:"$1", [true], [0] }]
