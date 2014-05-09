@@ -59,7 +59,7 @@ defmodule Ex2ms do
   end
 
   defp translate_body({ :__block__, _, exprs }, state) when is_list(exprs) do
-    Enum.map(exprs, translate_cond(&1, state))
+    Enum.map(exprs, &translate_cond(&1, state))
   end
 
   defp translate_body(expr, state) do
@@ -79,12 +79,12 @@ defmodule Ex2ms do
   end
 
   defp translate_cond({ :{}, [], list }, state) when is_list(list) do
-    { Enum.map(list, translate_cond(&1, state)) |> list_to_tuple }
+    { Enum.map(list, &translate_cond(&1, state)) |> list_to_tuple }
   end
 
   defp translate_cond({ fun, _, args }, state) when is_atom(fun) and is_list(args) do
     if is_guard_function(fun) do
-      match_args = Enum.map(args, translate_cond(&1, state))
+      match_args = Enum.map(args, &translate_cond(&1, state))
       match_fun = map_elixir_erlang(fun)
       [match_fun|match_args] |> list_to_tuple
     else
@@ -93,7 +93,7 @@ defmodule Ex2ms do
   end
 
   defp translate_cond(list, state) when is_list(list) do
-    Enum.map(list, translate_cond(&1, state))
+    Enum.map(list, &translate_cond(&1, state))
   end
 
   defp translate_cond(literal, _state) when is_literal(literal) do
@@ -146,8 +146,8 @@ defmodule Ex2ms do
     else
       match_var = "$#{state.count+1}"
       state = state
-        .update_vars([{var, match_var} | &1])
-        .update_count(&1 + 1)
+        .update_vars(&[{var, match_var} | &1])
+        .update_count(&(&1 + 1))
       { :"#{match_var}", state }
     end
   end
@@ -157,12 +157,12 @@ defmodule Ex2ms do
   end
 
   defp do_translate_param({ :{}, _, list }, state) when is_list(list) do
-    { list, state } = Enum.map_reduce(list, state, do_translate_param(&1, &2))
+    { list, state } = Enum.map_reduce(list, state, &do_translate_param(&1, &2))
     { list_to_tuple(list), state }
   end
 
   defp do_translate_param(list, state) when is_list(list) do
-    Enum.map_reduce(list, state, do_translate_param(&1, &2))
+    Enum.map_reduce(list, state, &do_translate_param(&1, &2))
   end
 
   defp do_translate_param(literal, state) when is_literal(literal) do
