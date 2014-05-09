@@ -28,8 +28,8 @@ defmodule Ex2ms do
 
   defrecord State, vars: [], count: 0
 
-  defmacro fun([do: { :->, _, funs }]) do
-    Enum.map(funs, fn(fun) -> translate_fun(fun) end) |> Macro.escape
+  defmacro fun([do: clauses]) do
+    Enum.map(clauses, fn({ :->, _, clause}) -> translate_clause(clause) end) |> Macro.escape
   end
 
   @doc """
@@ -52,7 +52,7 @@ defmodule Ex2ms do
     end
   end
 
-  defp translate_fun({ head, _, body }) do
+  defp translate_clause([head, body]) do
     { head, conds, state } = translate_head(head)
     body = translate_body(body, state)
     { head, conds, body }
@@ -74,12 +74,9 @@ defmodule Ex2ms do
     end
   end
 
-  defp translate_cond({ left, right }, state) do
-    translate_cond({ :{}, [], [left, right] }, state)
-  end
-
-  defp translate_cond({ :{}, [], list }, state) when is_list(list) do
-    { Enum.map(list, &translate_cond(&1, state)) |> list_to_tuple }
+  defp translate_cond({left, right}, state), do: translate_cond({:{}, [], [left, right]}, state)
+  defp translate_cond({:{}, [], list}, state) when is_list(list) do
+    {Enum.map(list, &translate_cond(&1, state)) |> list_to_tuple}
   end
 
   defp translate_cond({ fun, _, args }, state) when is_atom(fun) and is_list(args) do
