@@ -26,8 +26,6 @@ defmodule Ex2ms do
   end)
   defp map_elixir_erlang(atom), do: atom
 
-  defrecord State, vars: [], count: 0
-
   defmacro fun([do: clauses]) do
     Enum.map(clauses, fn({:->, _, clause}) -> translate_clause(clause) end) |> Macro.escape
   end
@@ -119,15 +117,15 @@ defmodule Ex2ms do
   defp translate_param(param) do
     {param, state} = case param do
       {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-        {param, State[].vars([{var, "$_"}])}
+        {param, %{vars: [{var, "$_"}], count: 0}}
       {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-        {param, State[].vars([{var, "$_"}])}
+        {param, %{vars: [{var, "$_"}], count: 0}}
       {var, _, nil} when is_atom(var) ->
-        {param, State[]}
+        {param, %{vars: [], count: 0}}
       {:{}, _, list} when is_list(list) ->
-        {param, State[]}
+        {param, %{vars: [], count: 0}}
       {_, _} ->
-        {param, State[]}
+        {param, %{vars: [], count: 0}}
       _ -> raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
     end
     do_translate_param(param, state)
@@ -143,8 +141,8 @@ defmodule Ex2ms do
     else
       match_var = "$#{state.count+1}"
       state = state
-        .update_vars(&[{var, match_var} | &1])
-        .update_count(&(&1 + 1))
+        |> Map.update!(:vars, &[{var, match_var} | &1])
+        |> Map.update!(:count, &(&1 + 1))
       {:"#{match_var}", state}
     end
   end
