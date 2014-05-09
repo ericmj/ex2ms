@@ -73,7 +73,7 @@ defmodule Ex2ms do
   end
 
   defp translate_cond({left, right}, state), do: translate_cond({:{}, [], [left, right]}, state)
-  defp translate_cond({:{}, [], list}, state) when is_list(list) do
+  defp translate_cond({:{}, _, list}, state) when is_list(list) do
     {Enum.map(list, &translate_cond(&1, state)) |> list_to_tuple}
   end
 
