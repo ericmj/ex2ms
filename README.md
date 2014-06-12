@@ -1,13 +1,13 @@
 # ex2ms
 
 Translates Elixir functions to match specifications for use with `ets`.
-Requires Elixir 0.9.4-dev or later.
+Requires Elixir 0.13.1 or later.
 
 #### Usage
 Add ex2ms to your Mix dependencies:
 ```elixir
 defp deps do
-  [{ :ex2ms, github: "ericmj/ex2ms" }]
+  [{ :ex2ms, "~> 1.0.0" }]
 end
 ```
 
