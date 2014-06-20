@@ -74,14 +74,14 @@ defmodule Ex2ms do
 
   defp translate_cond({left, right}, state), do: translate_cond({:{}, [], [left, right]}, state)
   defp translate_cond({:{}, _, list}, state) when is_list(list) do
-    {Enum.map(list, &translate_cond(&1, state)) |> list_to_tuple}
+    {Enum.map(list, &translate_cond(&1, state)) |> List.to_tuple}
   end
 
   defp translate_cond({fun, _, args}, state) when is_atom(fun) and is_list(args) do
     if is_guard_function(fun) do
       match_args = Enum.map(args, &translate_cond(&1, state))
       match_fun = map_elixir_erlang(fun)
-      [match_fun|match_args] |> list_to_tuple
+      [match_fun|match_args] |> List.to_tuple
     else
       raise ArgumentError, message: "illegal expression in matchspec"
     end
@@ -153,7 +153,7 @@ defmodule Ex2ms do
 
   defp do_translate_param({:{}, _, list}, state) when is_list(list) do
     {list, state} = Enum.map_reduce(list, state, &do_translate_param(&1, &2))
-    {list_to_tuple(list), state}
+    {List.to_tuple(list), state}
   end
 
   defp do_translate_param(list, state) when is_list(list) do
