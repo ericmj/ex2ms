@@ -27,7 +27,8 @@ defmodule Ex2ms do
   defp map_elixir_erlang(atom), do: atom
 
   defmacro fun([do: clauses]) do
-    Enum.map(clauses, fn({:->, _, clause}) -> translate_clause(clause) end) |> Macro.escape
+    outer_vars = __CALLER__.vars
+    Enum.map(clauses, fn({:->, _, clause}) -> translate_clause(clause, outer_vars) end) |> Macro.escape(unquote: true)
   end
 
   @doc """
@@ -50,8 +51,8 @@ defmodule Ex2ms do
     end
   end
 
-  defp translate_clause([head, body]) do
-    {head, conds, state} = translate_head(head)
+  defp translate_clause([head, body], outer_vars) do
+    {head, conds, state} = translate_head(head, outer_vars)
     body = translate_body(body, state)
     {head, conds, body}
   end
@@ -77,6 +78,10 @@ defmodule Ex2ms do
     {Enum.map(list, &translate_cond(&1, state)) |> List.to_tuple}
   end
 
+  defp translate_cond({:^, _, [var]}, state) do
+    {:unquote, [], [var]}
+  end
+
   defp translate_cond({fun, _, args}, state) when is_atom(fun) and is_list(args) do
     if is_guard_function(fun) do
       match_args = Enum.map(args, &translate_cond(&1, state))
@@ -99,33 +104,33 @@ defmodule Ex2ms do
     raise ArgumentError, message: "illegal expression in matchspec"
   end
 
-  defp translate_head([{:when, _, [param, cond]}]) do
-    {head, state} = translate_param(param)
+  defp translate_head([{:when, _, [param, cond]}], outer_vars) do
+    {head, state} = translate_param(param, outer_vars)
     cond = translate_cond(cond, state)
     {head, [cond], state}
   end
 
-  defp translate_head([param]) do
-    {head, state} = translate_param(param)
+  defp translate_head([param], outer_vars) do
+    {head, state} = translate_param(param, outer_vars)
     {head, [], state}
   end
 
-  defp translate_head(_) do
+  defp translate_head(_, _) do
     raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
   end
 
-  defp translate_param(param) do
+  defp translate_param(param, outer_vars) do
     {param, state} = case param do
       {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-        {param, %{vars: [{var, "$_"}], count: 0}}
+        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: outer_vars}}
       {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-        {param, %{vars: [{var, "$_"}], count: 0}}
+        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: outer_vars}}
       {var, _, nil} when is_atom(var) ->
-        {param, %{vars: [], count: 0}}
+        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
       {:{}, _, list} when is_list(list) ->
-        {param, %{vars: [], count: 0}}
+        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
       {_, _} ->
-        {param, %{vars: [], count: 0}}
+        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
       _ -> raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
     end
     do_translate_param(param, state)
@@ -154,6 +159,10 @@ defmodule Ex2ms do
   defp do_translate_param({:{}, _, list}, state) when is_list(list) do
     {list, state} = Enum.map_reduce(list, state, &do_translate_param(&1, &2))
     {List.to_tuple(list), state}
+  end
+
+  defp do_translate_param({:^, _, [var]}, state) do
+    {{:unquote, [], [var]}, state}
   end
 
   defp do_translate_param(list, state) when is_list(list) do

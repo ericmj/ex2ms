@@ -21,9 +21,22 @@ defmodule Ex2msTest do
            [{{{:n, :l, {:client, :"$1"}}, :"$2", :_}, [], [{{:"$1", :"$2"}}]}]
   end
 
+  test "gproc with bound variables" do
+    id = 5
+    assert (fun do {{:n, :l, {:client, ^id}}, pid, _} -> pid end) ==
+           [{{{:n, :l, {:client, 5}}, :"$1", :_}, [], [:"$1"]}]
+  end
+
   test "gproc with 3 vars" do
     assert (fun do {{:n, :l, {:client, id}}, pid, third} -> {id, pid, third} end) ==
            [{{{:n, :l, {:client, :"$1"}}, :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}]
+  end
+
+  test "gproc with 1 var and 2 bound vars" do
+    one = 11
+    two = 22
+    assert (fun do {{:n, :l, {:client, ^one}}, pid, ^two} -> {^one, pid} end) ==
+           [{{{:n, :l, {:client, 11}}, :"$1", 22}, [], [{{11, :"$1"}}]}]
   end
 
   test "cond" do
