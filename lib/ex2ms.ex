@@ -78,7 +78,7 @@ defmodule Ex2ms do
     {Enum.map(list, &translate_cond(&1, state)) |> List.to_tuple}
   end
 
-  defp translate_cond({:^, _, [var]}, state) do
+  defp translate_cond({:^, _, [var]}, _state) do
     {:unquote, [], [var]}
   end
 
