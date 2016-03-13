@@ -63,6 +63,23 @@ defmodule Ex2msTest do
     assert ms == [{:"$1", [], [:"$1", 0] }]
   end
 
+  test "map is illegal alone in body" do
+    assert_raise ArgumentError, "illegal expression in matchspec", fn ->
+      delay_compile(fun do {x, z} -> %{x: z} end)
+    end
+  end
+
+  test "map in head tuple" do
+    ms = fun do {x, %{a: y, c: z}} -> {y, z} end
+    assert ms == [{{:"$1", %{a: :"$2", c: :"$3"}}, [], [{{:"$2", :"$3"}}]}]
+  end
+
+  test "map is not allowed in the head of function" do
+    assert_raise ArgumentError, "parameters to matchspec has to be a single var or tuple", fn ->
+      delay_compile(fun do %{x: z} -> z end)
+    end
+  end
+
   test "invalid fun args" do
     assert_raise ArgumentError, "invalid args to matchspec", fn ->
       delay_compile(fun 123)
