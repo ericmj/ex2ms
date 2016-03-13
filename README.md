@@ -9,7 +9,7 @@ Requires Elixir 0.13.1 or later.
 Add ex2ms to your Mix dependencies:
 ```elixir
 defp deps do
-  [{ :ex2ms, "~> 1.2.0" }]
+  [{ :ex2ms, "~> 1.0" }]
 end
 ```
 
