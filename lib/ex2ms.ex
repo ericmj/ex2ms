@@ -54,8 +54,12 @@ defmodule Ex2ms do
 
   defp translate_clause([head, body], outer_vars) do
     {head, conds, state} = translate_head(head, outer_vars)
-    body = translate_body(body, state)
-    {head, conds, body}
+    case head do
+      %{} -> raise_parameter_error
+      _ ->
+        body = translate_body(body, state)
+        {head, conds, body}
+    end
   end
 
   defp translate_body({:__block__, _, exprs}, state) when is_list(exprs) do
@@ -89,7 +93,7 @@ defmodule Ex2ms do
       match_fun = map_elixir_erlang(fun)
       [match_fun|match_args] |> List.to_tuple
     else
-      raise ArgumentError, message: "illegal expression in matchspec"
+      raise_expression_error
     end
   end
 
@@ -101,9 +105,7 @@ defmodule Ex2ms do
     literal
   end
 
-  defp translate_cond(_, _state) do
-    raise ArgumentError, message: "illegal expression in matchspec"
-  end
+  defp translate_cond(_, _state), do: raise_expression_error
 
   defp translate_head([{:when, _, [param, cond]}], outer_vars) do
     {head, state} = translate_param(param, outer_vars)
@@ -116,9 +118,7 @@ defmodule Ex2ms do
     {head, [], state}
   end
 
-  defp translate_head(_, _) do
-    raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
-  end
+  defp translate_head(_, _), do: raise_parameter_error
 
   defp translate_param(param, outer_vars) do
     {param, state} = case param do
@@ -130,9 +130,11 @@ defmodule Ex2ms do
         {param, %{vars: [], count: 0, outer_vars: outer_vars}}
       {:{}, _, list} when is_list(list) ->
         {param, %{vars: [], count: 0, outer_vars: outer_vars}}
+      {:%{}, _, list} when is_list(list) ->
+        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
       {_, _} ->
         {param, %{vars: [], count: 0, outer_vars: outer_vars}}
-      _ -> raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
+      _ -> raise_parameter_error
     end
     do_translate_param(param, state)
   end
@@ -174,7 +176,21 @@ defmodule Ex2ms do
     {literal, state}
   end
 
-  defp do_translate_param(_, _state) do
+  defp do_translate_param({:%{}, _, list}, state) do
+    Enum.reduce list, {%{}, state}, fn {key, value}, {map, state} ->
+      {key, key_state} = do_translate_param(key, state)
+      {value, value_state} = do_translate_param(value, key_state)
+      {Map.put(map, key, value), value_state}
+    end
+  end
+
+  defp do_translate_param(_, _state), do: raise_parameter_error
+
+  defp raise_expression_error do
+    raise ArgumentError, message: "illegal expression in matchspec"
+  end
+
+  defp raise_parameter_error do
     raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
   end
 end
