@@ -55,7 +55,7 @@ defmodule Ex2ms do
   defp translate_clause([head, body], outer_vars) do
     {head, conds, state} = translate_head(head, outer_vars)
     case head do
-      %{} -> raise_parameter_error
+      %{} -> raise_parameter_error()
       _ ->
         body = translate_body(body, state)
         {head, conds, body}
@@ -93,7 +93,7 @@ defmodule Ex2ms do
       match_fun = map_elixir_erlang(fun)
       [match_fun|match_args] |> List.to_tuple
     else
-      raise_expression_error
+      raise_expression_error()
     end
   end
 
@@ -105,7 +105,7 @@ defmodule Ex2ms do
     literal
   end
 
-  defp translate_cond(_, _state), do: raise_expression_error
+  defp translate_cond(_, _state), do: raise_expression_error()
 
   defp translate_head([{:when, _, [param, cond]}], outer_vars) do
     {head, state} = translate_param(param, outer_vars)
@@ -118,7 +118,7 @@ defmodule Ex2ms do
     {head, [], state}
   end
 
-  defp translate_head(_, _), do: raise_parameter_error
+  defp translate_head(_, _), do: raise_parameter_error()
 
   defp translate_param(param, outer_vars) do
     {param, state} = case param do
@@ -134,7 +134,7 @@ defmodule Ex2ms do
         {param, %{vars: [], count: 0, outer_vars: outer_vars}}
       {_, _} ->
         {param, %{vars: [], count: 0, outer_vars: outer_vars}}
-      _ -> raise_parameter_error
+      _ -> raise_parameter_error()
     end
     do_translate_param(param, state)
   end
@@ -184,7 +184,7 @@ defmodule Ex2ms do
     end
   end
 
-  defp do_translate_param(_, _state), do: raise_parameter_error
+  defp do_translate_param(_, _state), do: raise_parameter_error()
 
   defp raise_expression_error do
     raise ArgumentError, message: "illegal expression in matchspec"
