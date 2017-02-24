@@ -1,14 +1,14 @@
 defmodule Ex2ms.Mixfile do
   use Mix.Project
 
-  @version "1.4.0"
+  @version "1.5.0"
 
   def project do
     [app: :ex2ms,
      version: @version,
      elixir: "~> 1.0",
      source_url: "https://github.com/ericmj",
-     docs: [source_ref: "v#{@version}", extras: ["README.md"]],
+     docs: [source_ref: "v#{@version}", main: "readme", extras: ["README.md"]],
      description: description(),
      package: package(),
      deps: deps()]
