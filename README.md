@@ -3,13 +3,13 @@
 [![Build Status](https://travis-ci.org/ericmj/ex2ms.svg?branch=master)](https://travis-ci.org/ericmj/ex2ms)
 
 Translates Elixir functions to match specifications for use with `ets`.
-Requires Elixir 0.13.1 or later.
+Requires Elixir 1.0 or later.
 
 #### Usage
 Add ex2ms to your Mix dependencies:
 ```elixir
 defp deps do
-  [{ :ex2ms, "~> 1.0" }]
+  [{:ex2ms, "~> 1.0"}]
 end
 ```
 
@@ -27,4 +27,3 @@ iex(3)> :ets.test_ms({ 42, 43 }, v(2))
 iex(4)> :ets.test_ms({ 0, 10 }, v(2))
 {:ok,false}
 ```
-
