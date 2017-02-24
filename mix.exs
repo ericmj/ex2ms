@@ -3,7 +3,7 @@ defmodule Ex2ms.Mixfile do
 
   def project do
     [ app: :ex2ms,
-      version: "1.4.0",
+      version: "1.5.0",
       elixir: "~> 1.0",
       description: description(),
       package: package(),
