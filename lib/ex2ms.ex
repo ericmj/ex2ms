@@ -92,8 +92,8 @@ defmodule Ex2ms do
         match_args = Enum.map(args, &translate_cond(&1, state))
         match_fun = map_elixir_erlang(fun)
         [match_fun|match_args] |> List.to_tuple
-      is_expandable(fun_call, state.caller) ->
-        translate_cond Macro.expand_once(fun_call, state.caller), state
+      expansion = is_expandable(fun_call, state.caller) ->
+        translate_cond expansion, state
       true ->
         raise_expression_error()
     end
@@ -189,7 +189,8 @@ defmodule Ex2ms do
   defp do_translate_param(_, _state), do: raise_parameter_error()
 
   defp is_expandable(ast, env) do
-    ast !== Macro.expand_once(ast, env)
+    expansion = Macro.expand_once ast, env
+    if ast !== expansion, do: expansion, else: false
   end
 
   defp raise_expression_error do
