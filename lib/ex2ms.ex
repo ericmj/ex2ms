@@ -11,8 +11,8 @@ defmodule Ex2ms do
 
   @guard_functions @bool_functions ++ [
     :abs, :element, :hd, :count, :node, :round, :size, :tl, :trunc, :+, :-, :*,
-    :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=, :===,
-    :==, :!==, :!=, :self]
+    :/, :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=,
+    :===, :==, :!==, :!=, :self]
 
   @elixir_erlang [
     ===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso,or: :orelse]
