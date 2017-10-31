@@ -15,7 +15,7 @@ defmodule Ex2ms do
     :===, :==, :!==, :!=, :self]
 
   @elixir_erlang [
-    ===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso,or: :orelse]
+    ===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso, or: :orelse]
 
   Enum.map(@guard_functions, fn(atom) ->
     defp is_guard_function(unquote(atom)), do: true
