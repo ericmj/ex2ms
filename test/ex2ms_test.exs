@@ -63,6 +63,18 @@ defmodule Ex2msTest do
     assert ms == [{:"$1", [], [:"$1", 0] }]
   end
 
+  test "custom guard macro" do
+    ms = fun do x when custom_guard x -> x end
+    assert ms == [{:"$1", [{:andalso, {:>, :"$1", 3}, {:"/=", :"$1", 5}}], [:"$1"]}]
+  end
+
+  test "nested custom guard macro" do
+    ms = fun do x when nested_custom_guard x -> x end
+    assert ms == [{:"$1",
+      [{:andalso, {:andalso, {:>, :"$1", 3}, {:"/=", :"$1", 5}},
+        {:andalso, {:>, {:+, :"$1", 1}, 3}, {:"/=", {:+, :"$1", 1}, 5}}}], [:"$1"]}]
+  end
+
   test "map is illegal alone in body" do
     assert_raise ArgumentError, "illegal expression in matchspec", fn ->
       delay_compile(fun do {x, z} -> %{x: z} end)

@@ -11,11 +11,11 @@ defmodule Ex2ms do
 
   @guard_functions @bool_functions ++ [
     :abs, :element, :hd, :count, :node, :round, :size, :tl, :trunc, :+, :-, :*,
-    :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=, :===,
-    :==, :!==, :!=, :self]
+    :/, :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=,
+    :===, :==, :!==, :!=, :self]
 
   @elixir_erlang [
-    ===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso,or: :orelse]
+    ===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso, or: :orelse]
 
   Enum.map(@guard_functions, fn(atom) ->
     defp is_guard_function(unquote(atom)), do: true
@@ -28,8 +28,7 @@ defmodule Ex2ms do
   defp map_elixir_erlang(atom), do: atom
 
   defmacro fun([do: clauses]) do
-    outer_vars = __CALLER__.vars
-    Enum.map(clauses, fn({:->, _, clause}) -> translate_clause(clause, outer_vars) end) |> Macro.escape(unquote: true)
+    Enum.map(clauses, fn({:->, _, clause}) -> translate_clause(clause, __CALLER__) end) |> Macro.escape(unquote: true)
   end
 
   @doc """
@@ -52,8 +51,8 @@ defmodule Ex2ms do
     end
   end
 
-  defp translate_clause([head, body], outer_vars) do
-    {head, conds, state} = translate_head(head, outer_vars)
+  defp translate_clause([head, body], caller) do
+    {head, conds, state} = translate_head(head, caller)
     case head do
       %{} -> raise_parameter_error()
       _ ->
@@ -87,13 +86,16 @@ defmodule Ex2ms do
     {:unquote, [], [var]}
   end
 
-  defp translate_cond({fun, _, args}, state) when is_atom(fun) and is_list(args) do
-    if is_guard_function(fun) do
-      match_args = Enum.map(args, &translate_cond(&1, state))
-      match_fun = map_elixir_erlang(fun)
-      [match_fun|match_args] |> List.to_tuple
-    else
-      raise_expression_error()
+  defp translate_cond(fun_call = {fun, _, args}, state) when is_atom(fun) and is_list(args) do
+    cond do
+      is_guard_function(fun) ->
+        match_args = Enum.map(args, &translate_cond(&1, state))
+        match_fun = map_elixir_erlang(fun)
+        [match_fun|match_args] |> List.to_tuple
+      expansion = is_expandable(fun_call, state.caller) ->
+        translate_cond expansion, state
+      true ->
+        raise_expression_error()
     end
   end
 
@@ -107,33 +109,33 @@ defmodule Ex2ms do
 
   defp translate_cond(_, _state), do: raise_expression_error()
 
-  defp translate_head([{:when, _, [param, cond]}], outer_vars) do
-    {head, state} = translate_param(param, outer_vars)
+  defp translate_head([{:when, _, [param, cond]}], caller) do
+    {head, state} = translate_param(param, caller)
     cond = translate_cond(cond, state)
     {head, [cond], state}
   end
 
-  defp translate_head([param], outer_vars) do
-    {head, state} = translate_param(param, outer_vars)
+  defp translate_head([param], caller) do
+    {head, state} = translate_param(param, caller)
     {head, [], state}
   end
 
   defp translate_head(_, _), do: raise_parameter_error()
 
-  defp translate_param(param, outer_vars) do
+  defp translate_param(param, caller) do
     {param, state} = case param do
       {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: outer_vars}}
+        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
       {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: outer_vars}}
+        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
       {var, _, nil} when is_atom(var) ->
-        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
+        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
       {:{}, _, list} when is_list(list) ->
-        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
+        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
       {:%{}, _, list} when is_list(list) ->
-        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
+        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
       {_, _} ->
-        {param, %{vars: [], count: 0, outer_vars: outer_vars}}
+        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
       _ -> raise_parameter_error()
     end
     do_translate_param(param, state)
@@ -185,6 +187,11 @@ defmodule Ex2ms do
   end
 
   defp do_translate_param(_, _state), do: raise_parameter_error()
+
+  defp is_expandable(ast, env) do
+    expansion = Macro.expand_once ast, env
+    if ast !== expansion, do: expansion, else: false
+  end
 
   defp raise_expression_error do
     raise ArgumentError, message: "illegal expression in matchspec"
