@@ -4,14 +4,16 @@ defmodule Ex2ms.Mixfile do
   @version "1.5.0"
 
   def project do
-    [app: :ex2ms,
-     version: @version,
-     elixir: "~> 1.0",
-     source_url: "https://github.com/ericmj",
-     docs: [source_ref: "v#{@version}", main: "readme", extras: ["README.md"]],
-     description: description(),
-     package: package(),
-     deps: deps()]
+    [
+      app: :ex2ms,
+      version: @version,
+      elixir: "~> 1.0",
+      source_url: "https://github.com/ericmj",
+      docs: [source_ref: "v#{@version}", main: "readme", extras: ["README.md"]],
+      description: description(),
+      package: package(),
+      deps: deps()
+    ]
   end
 
   def application do
@@ -29,9 +31,11 @@ defmodule Ex2ms.Mixfile do
   end
 
   defp package do
-    [files: ["lib", "mix.exs", "README.md"],
-     maintainers: ["Eric Meadows-Jönsson", "Martin Schurrer"],
-     licenses: ["Apache 2.0"],
-     links: %{"GitHub" => "https://github.com/ericmj/ex2ms"}]
+    [
+      files: ["lib", "mix.exs", "README.md"],
+      maintainers: ["Eric Meadows-Jönsson", "Martin Schurrer"],
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/ericmj/ex2ms"}
+    ]
   end
 end

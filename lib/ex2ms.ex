@@ -5,31 +5,72 @@ defmodule Ex2ms do
   """
 
   @bool_functions [
-    :is_atom, :is_float, :is_integer, :is_list, :is_number, :is_pid, :is_port,
-    :is_reference, :is_tuple, :is_binary, :is_function, :is_record, :and, :or,
-    :not, :xor]
+    :is_atom,
+    :is_float,
+    :is_integer,
+    :is_list,
+    :is_number,
+    :is_pid,
+    :is_port,
+    :is_reference,
+    :is_tuple,
+    :is_binary,
+    :is_function,
+    :is_record,
+    :and,
+    :or,
+    :not,
+    :xor
+  ]
 
-  @guard_functions @bool_functions ++ [
-    :abs, :element, :hd, :count, :node, :round, :size, :tl, :trunc, :+, :-, :*,
-    :/, :div, :rem, :band, :bor, :bxor, :bnot, :bsl, :bsr, :>, :>=, :<, :<=,
-    :===, :==, :!==, :!=, :self]
+  @extra_guard_functions [
+    :abs,
+    :element,
+    :hd,
+    :count,
+    :node,
+    :round,
+    :size,
+    :tl,
+    :trunc,
+    :+,
+    :-,
+    :*,
+    :/,
+    :div,
+    :rem,
+    :band,
+    :bor,
+    :bxor,
+    :bnot,
+    :bsl,
+    :bsr,
+    :>,
+    :>=,
+    :<,
+    :<=,
+    :===,
+    :==,
+    :!==,
+    :!=,
+    :self
+  ]
 
-  @elixir_erlang [
-    ===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso, or: :orelse]
+  @guard_functions @bool_functions ++ @extra_guard_functions
 
-  Enum.map(@guard_functions, fn(atom) ->
+  @elixir_erlang [===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso, or: :orelse]
+
+  Enum.each(@guard_functions, fn atom ->
     defp is_guard_function(unquote(atom)), do: true
   end)
+
   defp is_guard_function(_), do: false
 
-  Enum.map(@elixir_erlang, fn({elixir, erlang}) ->
+  Enum.each(@elixir_erlang, fn {elixir, erlang} ->
     defp map_elixir_erlang(unquote(elixir)), do: unquote(erlang)
   end)
-  defp map_elixir_erlang(atom), do: atom
 
-  defmacro fun([do: clauses]) do
-    Enum.map(clauses, fn({:->, _, clause}) -> translate_clause(clause, __CALLER__) end) |> Macro.escape(unquote: true)
-  end
+  defp map_elixir_erlang(atom), do: atom
 
   @doc """
   Translates an anonymous function to a match specification.
@@ -38,24 +79,25 @@ defmodule Ex2ms do
       iex> Ex2ms.fun do {x, y} -> x == 2 end
       [{{:"$1", :"$2"}, [], [{:==, :"$1", 2}]}]
   """
-  @spec fun((any -> any)) :: :ets.match_spec
-  defmacro fun(_) do
-    raise ArgumentError, message: "invalid args to matchspec"
+  defmacro fun(do: clauses) do
+    clauses
+    |> Enum.map(fn {:->, _, clause} -> translate_clause(clause, __CALLER__) end)
+    |> Macro.escape(unquote: true)
   end
 
   defmacrop is_literal(term) do
     quote do
-      is_atom(unquote(term)) or
-      is_number(unquote(term)) or
-      is_binary(unquote(term))
+      is_atom(unquote(term)) or is_number(unquote(term)) or is_binary(unquote(term))
     end
   end
 
   defp translate_clause([head, body], caller) do
     {head, conds, state} = translate_head(head, caller)
+
     case head do
       %{} ->
         raise_parameter_error(head)
+
       _ ->
         body = translate_body(body, state)
         {head, conds, body}
@@ -79,8 +121,9 @@ defmodule Ex2ms do
   end
 
   defp translate_cond({left, right}, state), do: translate_cond({:{}, [], [left, right]}, state)
+
   defp translate_cond({:{}, _, list}, state) when is_list(list) do
-    {Enum.map(list, &translate_cond(&1, state)) |> List.to_tuple}
+    {list |> Enum.map(&translate_cond(&1, state)) |> List.to_tuple()}
   end
 
   defp translate_cond({:^, _, [var]}, _state) do
@@ -92,9 +135,11 @@ defmodule Ex2ms do
       is_guard_function(fun) ->
         match_args = Enum.map(args, &translate_cond(&1, state))
         match_fun = map_elixir_erlang(fun)
-        [match_fun|match_args] |> List.to_tuple
+        [match_fun | match_args] |> List.to_tuple()
+
       expansion = is_expandable(fun_call, state.caller) ->
-        translate_cond expansion, state
+        translate_cond(expansion, state)
+
       true ->
         raise_expression_error(fun_call)
     end
@@ -124,22 +169,30 @@ defmodule Ex2ms do
   defp translate_head(expr, _caller), do: raise_parameter_error(expr)
 
   defp translate_param(param, caller) do
-    {param, state} = case param do
-      {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
-      {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-        {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
-      {var, _, nil} when is_atom(var) ->
-        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
-      {:{}, _, list} when is_list(list) ->
-        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
-      {:%{}, _, list} when is_list(list) ->
-        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
-      {_, _} ->
-        {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
-      _ ->
-        raise_parameter_error(param)
-    end
+    {param, state} =
+      case param do
+        {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
+          {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
+
+        {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
+          {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
+
+        {var, _, nil} when is_atom(var) ->
+          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+
+        {:{}, _, list} when is_list(list) ->
+          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+
+        {:%{}, _, list} when is_list(list) ->
+          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+
+        {_, _} ->
+          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+
+        _ ->
+          raise_parameter_error(param)
+      end
+
     do_translate_param(param, state)
   end
 
@@ -151,10 +204,13 @@ defmodule Ex2ms do
     if match_var = state.vars[var] do
       {:"#{match_var}", state}
     else
-      match_var = "$#{state.count+1}"
-      state = state
+      match_var = "$#{state.count + 1}"
+
+      state =
+        state
         |> Map.update!(:vars, &[{var, match_var} | &1])
         |> Map.update!(:count, &(&1 + 1))
+
       {:"#{match_var}", state}
     end
   end
@@ -181,17 +237,17 @@ defmodule Ex2ms do
   end
 
   defp do_translate_param({:%{}, _, list}, state) do
-    Enum.reduce list, {%{}, state}, fn {key, value}, {map, state} ->
+    Enum.reduce(list, {%{}, state}, fn {key, value}, {map, state} ->
       {key, key_state} = do_translate_param(key, state)
       {value, value_state} = do_translate_param(value, key_state)
       {Map.put(map, key, value), value_state}
-    end
+    end)
   end
 
   defp do_translate_param(expr, _state), do: raise_parameter_error(expr)
 
   defp is_expandable(ast, env) do
-    expansion = Macro.expand_once ast, env
+    expansion = Macro.expand_once(ast, env)
     if ast !== expansion, do: expansion, else: false
   end
 
@@ -201,7 +257,10 @@ defmodule Ex2ms do
   end
 
   defp raise_parameter_error(expr) do
-    message = "illegal parameter to matchspec (has to be a single var or tuple):\n#{Macro.to_string(expr)}"
+    message =
+      "illegal parameter to matchspec (has to be a single variable or tuple):\n" <>
+        Macro.to_string(expr)
+
     raise ArgumentError, message: message
   end
 end
