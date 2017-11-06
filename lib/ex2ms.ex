@@ -54,7 +54,8 @@ defmodule Ex2ms do
   defp translate_clause([head, body], caller) do
     {head, conds, state} = translate_head(head, caller)
     case head do
-      %{} -> raise_parameter_error()
+      %{} ->
+        raise_parameter_error(head)
       _ ->
         body = translate_body(body, state)
         {head, conds, body}
@@ -95,7 +96,7 @@ defmodule Ex2ms do
       expansion = is_expandable(fun_call, state.caller) ->
         translate_cond expansion, state
       true ->
-        raise_expression_error()
+        raise_expression_error(fun_call)
     end
   end
 
@@ -107,7 +108,7 @@ defmodule Ex2ms do
     literal
   end
 
-  defp translate_cond(_, _state), do: raise_expression_error()
+  defp translate_cond(expr, _state), do: raise_expression_error(expr)
 
   defp translate_head([{:when, _, [param, cond]}], caller) do
     {head, state} = translate_param(param, caller)
@@ -120,7 +121,7 @@ defmodule Ex2ms do
     {head, [], state}
   end
 
-  defp translate_head(_, _), do: raise_parameter_error()
+  defp translate_head(expr, _caller), do: raise_parameter_error(expr)
 
   defp translate_param(param, caller) do
     {param, state} = case param do
@@ -136,7 +137,8 @@ defmodule Ex2ms do
         {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
       {_, _} ->
         {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
-      _ -> raise_parameter_error()
+      _ ->
+        raise_parameter_error(param)
     end
     do_translate_param(param, state)
   end
@@ -186,18 +188,20 @@ defmodule Ex2ms do
     end
   end
 
-  defp do_translate_param(_, _state), do: raise_parameter_error()
+  defp do_translate_param(expr, _state), do: raise_parameter_error(expr)
 
   defp is_expandable(ast, env) do
     expansion = Macro.expand_once ast, env
     if ast !== expansion, do: expansion, else: false
   end
 
-  defp raise_expression_error do
-    raise ArgumentError, message: "illegal expression in matchspec"
+  defp raise_expression_error(expr) do
+    message = "illegal expression in matchspec:\n#{Macro.to_string(expr)}"
+    raise ArgumentError, message: message
   end
 
-  defp raise_parameter_error do
-    raise ArgumentError, message: "parameters to matchspec has to be a single var or tuple"
+  defp raise_parameter_error(expr) do
+    message = "illegal parameter to matchspec (has to be a single var or tuple):\n#{Macro.to_string(expr)}"
+    raise ArgumentError, message: message
   end
 end

@@ -27,12 +27,12 @@ defmodule Ex2msTest do
            [{{{:n, :l, {:client, 5}}, :"$1", :_}, [], [:"$1"]}]
   end
 
-  test "gproc with 3 vars" do
+  test "gproc with 3 variables" do
     assert (fun do {{:n, :l, {:client, id}}, pid, third} -> {id, pid, third} end) ==
            [{{{:n, :l, {:client, :"$1"}}, :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}]
   end
 
-  test "gproc with 1 var and 2 bound vars" do
+  test "gproc with 1 variable and 2 bound variables" do
     one = 11
     two = 22
     assert (fun do {{:n, :l, {:client, ^one}}, pid, ^two} -> {^one, pid} end) ==
@@ -76,7 +76,7 @@ defmodule Ex2msTest do
   end
 
   test "map is illegal alone in body" do
-    assert_raise ArgumentError, "illegal expression in matchspec", fn ->
+    assert_raise ArgumentError, "illegal expression in matchspec:\n%{x: z}", fn ->
       delay_compile(fun do {x, z} -> %{x: z} end)
     end
   end
@@ -87,43 +87,43 @@ defmodule Ex2msTest do
   end
 
   test "map is not allowed in the head of function" do
-    assert_raise ArgumentError, "parameters to matchspec has to be a single var or tuple", fn ->
+    assert_raise ArgumentError, "illegal parameter to matchspec (has to be a single variable or tuple):\n%{x: :\"$1\"}", fn ->
       delay_compile(fun do %{x: z} -> z end)
     end
   end
 
   test "invalid fun args" do
-    assert_raise ArgumentError, "invalid args to matchspec", fn ->
+    assert_raise FunctionClauseError, fn ->
       delay_compile(fun 123)
     end
   end
 
   test "raise on invalid fun head" do
-    assert_raise ArgumentError, "parameters to matchspec has to be a single var or tuple", fn ->
+    assert_raise ArgumentError, "illegal parameter to matchspec (has to be a single variable or tuple):\n[x, y]", fn ->
       delay_compile(fun do x, y -> 0 end)
     end
 
-    assert_raise ArgumentError, "parameters to matchspec has to be a single var or tuple", fn ->
+    assert_raise ArgumentError, "illegal parameter to matchspec (has to be a single variable or tuple):\ny = z", fn ->
       delay_compile(fun do {x, y = z} -> 0 end)
     end
 
-    assert_raise ArgumentError, "parameters to matchspec has to be a single var or tuple", fn ->
+    assert_raise ArgumentError, "illegal parameter to matchspec (has to be a single variable or tuple):\n123", fn ->
       delay_compile(fun do 123 -> 0 end)
     end
   end
 
-  test "unbound var" do
+  test "unbound variable" do
     assert_raise ArgumentError, "variable `y` is unbound in matchspec", fn ->
       delay_compile(fun do x -> y end)
     end
   end
 
   test "invalid expression" do
-    assert_raise ArgumentError, "illegal expression in matchspec", fn ->
+    assert_raise ArgumentError, "illegal expression in matchspec:\nx = y", fn ->
       delay_compile(fun do x -> x = y end)
     end
 
-    assert_raise ArgumentError, "illegal expression in matchspec", fn ->
+    assert_raise ArgumentError, "illegal expression in matchspec:\nabc(x)", fn ->
       delay_compile(fun do x -> abc(x) end)
     end
   end
