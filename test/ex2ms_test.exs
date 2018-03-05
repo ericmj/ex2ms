@@ -1,6 +1,9 @@
 defmodule Ex2msTest do
   use ExUnit.Case, async: true
 
+  require Record
+  Record.defrecordp(:user, [:name, :age])
+
   import TestHelpers
   import Ex2ms
 
@@ -33,7 +36,9 @@ defmodule Ex2msTest do
   test "gproc with 3 variables" do
     assert (fun do
               {{:n, :l, {:client, id}}, pid, third} -> {id, pid, third}
-            end) == [{{{:n, :l, {:client, :"$1"}}, :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}]
+            end) == [
+             {{{:n, :l, {:client, :"$1"}}, :"$2", :"$3"}, [], [{{:"$1", :"$2", :"$3"}}]}
+           ]
   end
 
   test "gproc with 1 variable and 2 bound variables" do
@@ -201,6 +206,32 @@ defmodule Ex2msTest do
         end
       )
     end
+  end
+
+  test "record" do
+    ms =
+      fun do
+        user(age: x) = n when x > 18 -> n
+      end
+
+    assert ms == [{{:user, :_, :"$1"}, [{:>, :"$1", 18}], [:"$_"]}]
+
+    x = 18
+
+    ms =
+      fun do
+        user(name: name, age: ^x) -> name
+      end
+
+    assert ms == [{{:user, :"$1", 18}, [], [:"$1"]}]
+
+    # Records nils will be converted to :_, if nils are needed, we should explicitly match on it
+    ms =
+      fun do
+        user(age: age) = n when age == nil -> n
+      end
+
+    assert ms == [{{:user, :_, :"$1"}, [{:==, :"$1", nil}], [:"$_"]}]
   end
 
   doctest Ex2ms
