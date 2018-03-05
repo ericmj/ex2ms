@@ -169,13 +169,17 @@ defmodule Ex2ms do
   defp translate_head(expr, _caller), do: raise_parameter_error(expr)
 
   defp translate_param(param, caller) do
+    param = Macro.expand(param, %{caller | context: :match})
+
     {param, state} =
       case param do
         {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-          {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
+          state = %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}
+          {Macro.expand(param, %{caller | context: :match}), state}
 
         {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-          {param, %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}}
+          state = %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}
+          {Macro.expand(param, %{caller | context: :match}), state}
 
         {var, _, nil} when is_atom(var) ->
           {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
