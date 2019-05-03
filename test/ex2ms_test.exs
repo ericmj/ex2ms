@@ -234,5 +234,22 @@ defmodule Ex2msTest do
     assert ms == [{{:user, :_, :"$1"}, [{:==, :"$1", nil}], [:"$_"]}]
   end
 
+  test "action function" do
+    ms =
+      fun do
+        _ -> return_trace()
+      end
+
+    assert ms == [{:_, [], [{:return_trace}]}]
+
+    # action functions with arguments get turned into :atom, args... tuples
+    ms =
+      fun do
+        arg when arg == :foo -> set_seq_token(:label, :foo)
+      end
+
+    assert ms == [{:"$1", [{:==, :"$1", :foo}], [{:set_seq_token, :label, :foo}]}]
+  end
+
   doctest Ex2ms
 end

@@ -58,6 +58,21 @@ defmodule Ex2ms do
 
   @guard_functions @bool_functions ++ @extra_guard_functions
 
+  @action_functions [
+    :set_seq_token,
+    :get_seq_token,
+    :message,
+    :return_trace,
+    :exception_trace,
+    :process_dump,
+    :enable_trace,
+    :disable_trace,
+    :trace,
+    :display,
+    :caller,
+    :set_tcw,
+    :silent
+  ]
   @elixir_erlang [===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso, or: :orelse]
 
   Enum.each(@guard_functions, fn atom ->
@@ -65,6 +80,12 @@ defmodule Ex2ms do
   end)
 
   defp is_guard_function(_), do: false
+
+  Enum.each(@action_functions, fn atom ->
+    defp is_action_function(unquote(atom)), do: true
+  end)
+
+  defp is_action_function(_), do: false
 
   Enum.each(@elixir_erlang, fn {elixir, erlang} ->
     defp map_elixir_erlang(unquote(elixir)), do: unquote(erlang)
@@ -139,6 +160,10 @@ defmodule Ex2ms do
 
       expansion = is_expandable(fun_call, state.caller) ->
         translate_cond(expansion, state)
+
+      is_action_function(fun) ->
+        match_args = Enum.map(args, &translate_cond(&1, state))
+        [fun | match_args] |> List.to_tuple()
 
       true ->
         raise_expression_error(fun_call)
