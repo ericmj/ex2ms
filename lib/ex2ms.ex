@@ -148,7 +148,7 @@ defmodule Ex2ms do
   end
 
   defp translate_cond({:^, _, [var]}, _state) do
-    {:unquote, [], [var]}
+    {:const, {:unquote, [], [var]}}
   end
 
   defp translate_cond(fun_call = {fun, _, args}, state) when is_atom(fun) and is_list(args) do
