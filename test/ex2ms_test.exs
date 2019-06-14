@@ -45,9 +45,14 @@ defmodule Ex2msTest do
     one = 11
     two = 22
 
-    assert (fun do
-              {{:n, :l, {:client, ^one}}, pid, ^two} -> {^one, pid}
-            end) == [{{{:n, :l, {:client, 11}}, :"$1", 22}, [], [{{11, :"$1"}}]}]
+    ms =
+      fun do
+        {{:n, :l, {:client, ^one}}, pid, ^two} -> {^one, pid}
+      end
+
+    self_pid = self()
+    assert ms == [{{{:n, :l, {:client, 11}}, :"$1", 22}, [], [{{{:const, 11}, :"$1"}}]}]
+    assert {:ok, {one, self_pid}} === :ets.test_ms({{:n, :l, {:client, 11}}, self_pid, two}, ms)
   end
 
   test "cond" do
@@ -249,6 +254,29 @@ defmodule Ex2msTest do
       end
 
     assert ms == [{:"$1", [{:==, :"$1", :foo}], [{:set_seq_token, :label, :foo}]}]
+  end
+
+  test "composite bound variables in guards" do
+    one = {1, 2, 3}
+
+    ms =
+      fun do
+        arg when arg < ^one -> arg
+      end
+
+    assert ms == [{:"$1", [{:<, :"$1", {:const, {1, 2, 3}}}], [:"$1"]}]
+  end
+
+  test "composite bound variables in return value" do
+    bound = {1, 2, 3}
+
+    ms =
+      fun do
+        arg -> {^bound, arg}
+      end
+
+    assert ms == [{:"$1", [], [{{{:const, {1, 2, 3}}, :"$1"}}]}]
+    assert {:ok, {bound, {:some, :record}}} === :ets.test_ms({:some, :record}, ms)
   end
 
   doctest Ex2ms
