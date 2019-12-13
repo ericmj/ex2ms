@@ -1,6 +1,6 @@
 defmodule Ex2ms do
   @moduledoc """
-  This module provides the `Ex2ms.fun/2` macro for translating Elixir functions
+  This module provides the `Ex2ms.fun/1` macro for translating Elixir functions
   to match specifications.
   """
 
