@@ -1,7 +1,4 @@
 language: elixir
 elixir:
   - 1.0.0
-  - 1.4.0
-notifications:
-  recipients:
-    - martin@schuerrer.org
+  - 1.9.4
