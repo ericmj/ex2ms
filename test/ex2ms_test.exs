@@ -65,6 +65,16 @@ defmodule Ex2msTest do
             end) == [{:"$1", [{:andalso, true, false}], [0]}]
   end
 
+  test "`in` guard" do
+    ms =
+      fun do
+        x when x in ["a", "b"] -> x
+      end
+
+    assert ms == [{:"$1", [{:or, {:==, :"$1", "a"}, {:==, :"$1", "b"}}], [:"$1"]}]
+    assert :ets.test_ms("a", ms) == {:ok, "a"}
+  end
+
   test "multiple funs" do
     ms =
       fun do

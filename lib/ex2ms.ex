@@ -151,6 +151,22 @@ defmodule Ex2ms do
     {:const, {:unquote, [], [var]}}
   end
 
+  defp translate_cond({:in, _, [{arg, _, _}, args]}, state) when is_list(args) do
+    arg =
+      if match_var = state.vars[arg] do
+        :"#{match_var}"
+      else
+        arg
+      end
+
+    match_args =
+      Enum.map(args, fn element ->
+        {:==, arg, element}
+      end)
+
+    [:or | match_args] |> List.to_tuple()
+  end
+
   defp translate_cond(fun_call = {fun, _, args}, state) when is_atom(fun) and is_list(args) do
     cond do
       is_guard_function(fun) ->
