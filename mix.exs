@@ -1,7 +1,7 @@
 defmodule Ex2ms.Mixfile do
   use Mix.Project
 
-  @version "1.6.0"
+  @version "1.6.1"
   @github_url "https://github.com/ericmj/ex2ms"
 
   def project do
