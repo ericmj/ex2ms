@@ -1,0 +1,43 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - erlang: "24.0"
+            elixir: "1.12.2"
+            lint: true
+          - erlang: "19.3"
+            elixir: "1.7.4"
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install OTP and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.erlang}}
+          elixir-version: ${{matrix.elixir}}
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Check for unused dependencies
+        run: mix deps.unlock --check-unused
+        if: ${{matrix.lint}}
+
+      - name: Compile with --warnings-as-errors
+        run: mix compile --warnings-as-errors
+        if: ${{matrix.lint}}
+
+      - name: Check mix format
+        run: mix format --check-formatted
+        if: ${{matrix.lint}}
+
+      - name: Run tests
+        run: mix test --trace
