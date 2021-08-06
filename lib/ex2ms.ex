@@ -199,24 +199,30 @@ defmodule Ex2ms do
     {param, state} =
       case param do
         {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-          state = %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}
+          vars = Macro.Env.vars(caller)
+          state = %{vars: [{var, "$_"}], count: 0, outer_vars: vars, caller: caller}
           {Macro.expand(param, %{caller | context: :match}), state}
 
         {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-          state = %{vars: [{var, "$_"}], count: 0, outer_vars: caller.vars, caller: caller}
+          vars = Macro.Env.vars(caller)
+          state = %{vars: [{var, "$_"}], count: 0, outer_vars: vars, caller: caller}
           {Macro.expand(param, %{caller | context: :match}), state}
 
         {var, _, nil} when is_atom(var) ->
-          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+          vars = Macro.Env.vars(caller)
+          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
 
         {:{}, _, list} when is_list(list) ->
-          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+          vars = Macro.Env.vars(caller)
+          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
 
         {:%{}, _, list} when is_list(list) ->
-          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+          vars = Macro.Env.vars(caller)
+          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
 
         {_, _} ->
-          {param, %{vars: [], count: 0, outer_vars: caller.vars, caller: caller}}
+          vars = Macro.Env.vars(caller)
+          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
 
         _ ->
           raise_parameter_error(param)
