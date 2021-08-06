@@ -8,7 +8,7 @@ defmodule Ex2ms.Mixfile do
     [
       app: :ex2ms,
       version: @version,
-      elixir: "~> 1.0",
+      elixir: "~> 1.7",
       source_url: @github_url,
       docs: [source_ref: "v#{@version}", main: "readme", extras: ["README.md"]],
       description: description(),
@@ -33,9 +33,8 @@ defmodule Ex2ms.Mixfile do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README.md"],
-      maintainers: ["Eric Meadows-Jönsson", "Martin Schurrer"],
-      licenses: ["Apache 2.0"],
+      maintainers: ["Eric Meadows-Jönsson"],
+      licenses: ["Apache-2.0"],
       links: %{"GitHub" => @github_url}
     ]
   end
