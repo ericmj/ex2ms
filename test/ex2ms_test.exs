@@ -185,8 +185,15 @@ defmodule Ex2msTest do
                  end
   end
 
+  test "outer bound variable" do
+    y = 123
+    assert (fun do
+              x -> y
+            end) == [{:"$1", [], [123]}]
+  end
+
   test "unbound variable" do
-    assert_raise ArgumentError, "variable `y` is unbound in matchspec", fn ->
+    assert_raise ArgumentError, "variable `y` is unbound", fn ->
       delay_compile(
         fun do
           x -> y

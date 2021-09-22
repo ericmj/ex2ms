@@ -137,7 +137,10 @@ defmodule Ex2ms do
     if match_var = state.vars[var] do
       :"#{match_var}"
     else
-      raise ArgumentError, message: "variable `#{var}` is unbound in matchspec"
+      case Keyword.fetch(state.outer_vars, var) do
+        {:ok, context} -> {:unquote, [], [{var, [], context}]}
+        _ -> raise ArgumentError, message: "variable `#{var}` is unbound"
+      end
     end
   end
 
