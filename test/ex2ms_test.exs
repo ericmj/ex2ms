@@ -47,7 +47,7 @@ defmodule Ex2msTest do
 
     ms =
       fun do
-        {{:n, :l, {:client, ^one}}, pid, ^two} -> {^one, pid}
+        {{:n, :l, {:client, ^one}}, pid, ^two} -> {one, pid}
       end
 
     self_pid = self()
@@ -186,7 +186,7 @@ defmodule Ex2msTest do
   end
 
   test "unbound variable" do
-    assert_raise ArgumentError, "variable `y` is unbound in matchspec", fn ->
+    assert_raise UndefinedFunctionError, fn ->
       delay_compile(
         fun do
           x -> y
@@ -261,7 +261,7 @@ defmodule Ex2msTest do
 
     ms =
       fun do
-        arg when arg < ^one -> arg
+        arg when arg < one -> arg
       end
 
     assert ms == [{:"$1", [{:<, :"$1", {:const, {1, 2, 3}}}], [:"$1"]}]
@@ -272,11 +272,35 @@ defmodule Ex2msTest do
 
     ms =
       fun do
+        arg -> {bound, arg}
+      end
+
+    assert ms == [{:"$1", [], [{{{:const, {1, 2, 3}}, :"$1"}}]}]
+    assert {:ok, {bound, {:some, :record}}} === :ets.test_ms({:some, :record}, ms)
+  end
+
+  test "deprecated syntax for composite bound variables in return value" do
+    bound = {1, 2, 3}
+
+    ms =
+      fun do
         arg -> {^bound, arg}
       end
 
     assert ms == [{:"$1", [], [{{{:const, {1, 2, 3}}, :"$1"}}]}]
     assert {:ok, {bound, {:some, :record}}} === :ets.test_ms({:some, :record}, ms)
+  end
+
+  test "composite bound variables in patterns" do
+    bound = {1, 2, 3}
+
+    ms =
+      fun do
+        {^bound, ret} -> ret
+      end
+
+    assert ms == [{{{1, 2, 3}, :"$1"}, [], [:"$1"]}]
+    assert {:ok, 42} === :ets.test_ms({bound, 42}, ms)
   end
 
   doctest Ex2ms
