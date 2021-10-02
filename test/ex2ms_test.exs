@@ -281,6 +281,15 @@ defmodule Ex2msTest do
     assert {:ok, {bound, {:some, :record}}} === :ets.test_ms({:some, :record}, ms)
   end
 
+  test "outer expressions get evaluated" do
+    ms =
+      fun do
+        arg -> {^{1, 1 + 1, 3}, arg}
+      end
+
+    assert ms == [{:"$1", [], [{{{:const, {1, 2, 3}}, :"$1"}}]}]
+  end
+
   defmacro test_contexts(var) do
     quote do
       var = {1, 2, 3}
