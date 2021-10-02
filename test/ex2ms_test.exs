@@ -281,5 +281,22 @@ defmodule Ex2msTest do
     assert {:ok, {bound, {:some, :record}}} === :ets.test_ms({:some, :record}, ms)
   end
 
+  defmacro test_contexts(var) do
+    quote do
+      var = {1, 2, 3}
+
+      fun do
+        {^var, _} -> ^unquote(var)
+      end
+    end
+  end
+
+  test "contexts are preserved" do
+    var = 42
+    ms = test_contexts(var)
+
+    assert {:ok, 42} === :ets.test_ms({{1, 2, 3}, 123}, ms)
+  end
+
   doctest Ex2ms
 end
