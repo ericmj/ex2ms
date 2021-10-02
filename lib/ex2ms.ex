@@ -133,13 +133,13 @@ defmodule Ex2ms do
     [translate_cond(expr, state)]
   end
 
-  defp translate_cond({var, _, nil}, state) when is_atom(var) do
-    if match_var = state.vars[var] do
+  defp translate_cond({name, _, context}, state) when is_atom(name) and is_atom(context) do
+    if match_var = state.vars[{name, context}] do
       :"#{match_var}"
     else
       raise ArgumentError,
         message:
-          "variable `#{var}` is unbound in matchspec (use `^` for outer variables and expressions)"
+          "variable `#{name}` is unbound in matchspec (use `^` for outer variables and expressions)"
     end
   end
 
@@ -200,31 +200,25 @@ defmodule Ex2ms do
 
     {param, state} =
       case param do
-        {:=, _, [{var, _, nil}, param]} when is_atom(var) ->
-          vars = Macro.Env.vars(caller)
-          state = %{vars: [{var, "$_"}], count: 0, outer_vars: vars, caller: caller}
+        {:=, _, [{name, _, context}, param]} when is_atom(name) and is_atom(context) ->
+          state = %{vars: %{{name, context} => "$_"}, count: 0, caller: caller}
           {Macro.expand(param, %{caller | context: :match}), state}
 
-        {:=, _, [param, {var, _, nil}]} when is_atom(var) ->
-          vars = Macro.Env.vars(caller)
-          state = %{vars: [{var, "$_"}], count: 0, outer_vars: vars, caller: caller}
+        {:=, _, [param, {name, _, context}]} when is_atom(name) and is_atom(context) ->
+          state = %{vars: %{{name, context} => "$_"}, count: 0, caller: caller}
           {Macro.expand(param, %{caller | context: :match}), state}
 
-        {var, _, nil} when is_atom(var) ->
-          vars = Macro.Env.vars(caller)
-          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
+        {name, _, context} when is_atom(name) and is_atom(context) ->
+          {param, %{vars: %{}, count: 0, caller: caller}}
 
         {:{}, _, list} when is_list(list) ->
-          vars = Macro.Env.vars(caller)
-          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
+          {param, %{vars: %{}, count: 0, caller: caller}}
 
         {:%{}, _, list} when is_list(list) ->
-          vars = Macro.Env.vars(caller)
-          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
+          {param, %{vars: %{}, count: 0, caller: caller}}
 
         {_, _} ->
-          vars = Macro.Env.vars(caller)
-          {param, %{vars: [], count: 0, outer_vars: vars, caller: caller}}
+          {param, %{vars: %{}, count: 0, caller: caller}}
 
         _ ->
           raise_parameter_error(param)
@@ -233,20 +227,21 @@ defmodule Ex2ms do
     do_translate_param(param, state)
   end
 
-  defp do_translate_param({:_, _, nil}, state) do
+  defp do_translate_param({:_, _, context}, state) when is_atom(context) do
     {:_, state}
   end
 
-  defp do_translate_param({var, _, nil}, state) when is_atom(var) do
-    if match_var = state.vars[var] do
+  defp do_translate_param({name, _, context}, state) when is_atom(name) and is_atom(context) do
+    if match_var = state.vars[{name, context}] do
       {:"#{match_var}", state}
     else
       match_var = "$#{state.count + 1}"
 
-      state =
+      state = %{
         state
-        |> Map.update!(:vars, &[{var, match_var} | &1])
-        |> Map.update!(:count, &(&1 + 1))
+        | vars: Map.put(state.vars, {name, context}, match_var),
+          count: state.count + 1
+      }
 
       {:"#{match_var}", state}
     end
