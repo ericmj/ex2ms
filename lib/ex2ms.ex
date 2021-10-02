@@ -137,7 +137,9 @@ defmodule Ex2ms do
     if match_var = state.vars[var] do
       :"#{match_var}"
     else
-      raise ArgumentError, message: "variable `#{var}` is unbound in matchspec"
+      raise ArgumentError,
+        message:
+          "variable `#{var}` is unbound in matchspec (use `^` for outer variables and expressions)"
     end
   end
 
@@ -259,8 +261,8 @@ defmodule Ex2ms do
     {List.to_tuple(list), state}
   end
 
-  defp do_translate_param({:^, _, [var]}, state) do
-    {{:unquote, [], [var]}, state}
+  defp do_translate_param({:^, _, [expr]}, state) do
+    {{:unquote, [], [expr]}, state}
   end
 
   defp do_translate_param(list, state) when is_list(list) do
