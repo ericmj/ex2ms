@@ -186,13 +186,15 @@ defmodule Ex2msTest do
   end
 
   test "unbound variable" do
-    assert_raise ArgumentError, "variable `y` is unbound in matchspec", fn ->
-      delay_compile(
-        fun do
-          x -> y
-        end
-      )
-    end
+    assert_raise ArgumentError,
+                 "variable `y` is unbound in matchspec (use `^` for outer variables and expressions)",
+                 fn ->
+                   delay_compile(
+                     fun do
+                       x -> y
+                     end
+                   )
+                 end
   end
 
   test "invalid expression" do
