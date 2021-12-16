@@ -307,5 +307,14 @@ defmodule Ex2msTest do
     assert {:ok, 42} === :ets.test_ms({{1, 2, 3}, 123}, ms)
   end
 
+  test "cons cells are working" do
+    ms =
+      fun do
+        {k, l} when is_list(l) -> {k, [:marker | l]}
+      end
+
+    assert ms == [{{:"$1", :"$2"}, [is_list: :"$2"], [{{:"$1", [:marker | :"$2"]}}]}]
+  end
+
   doctest Ex2ms
 end

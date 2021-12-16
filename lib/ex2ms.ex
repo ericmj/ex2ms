@@ -173,7 +173,7 @@ defmodule Ex2ms do
   end
 
   defp translate_cond(list, state) when is_list(list) do
-    Enum.map(list, &translate_cond(&1, state))
+    translate_list(list, state)
   end
 
   defp translate_cond(literal, _state) when is_literal(literal) do
@@ -181,6 +181,22 @@ defmodule Ex2ms do
   end
 
   defp translate_cond(expr, _state), do: raise_expression_error(expr)
+
+  defp translate_list([], _state) do
+    []
+  end
+
+  defp translate_list([{:|, _, [left, right]}], state) do
+    left_p = translate_cond(left, state)
+    right_p = translate_cond(right, state)
+    [left_p | right_p]
+  end
+
+  defp translate_list([head | tail], state) do
+    head_p = translate_cond(head, state)
+    tail_p = translate_list(tail, state)
+    [head_p | tail_p]
+  end
 
   defp translate_head([{:when, _, [param, cond]}], caller) do
     {head, state} = translate_param(param, caller)
