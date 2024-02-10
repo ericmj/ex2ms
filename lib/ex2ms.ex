@@ -6,76 +6,86 @@ defmodule Ex2ms do
 
   @bool_functions [
     :is_atom,
+    :is_binary,
     :is_float,
+    :is_function,
     :is_integer,
     :is_list,
+    :is_map_key,
     :is_number,
     :is_pid,
     :is_port,
+    :is_record,
     :is_reference,
     :is_tuple,
-    :is_binary,
-    :is_function,
-    :is_record,
     :and,
-    :or,
     :not,
+    :or,
     :xor
   ]
 
   @extra_guard_functions [
-    :abs,
-    :element,
-    :hd,
-    :count,
-    :node,
-    :round,
-    :size,
-    :tl,
-    :trunc,
-    :+,
     :-,
+    :!=,
+    :!==,
     :*,
     :/,
-    :div,
-    :rem,
-    :band,
-    :bor,
-    :bxor,
-    :bnot,
-    :bsl,
-    :bsr,
-    :>,
-    :>=,
+    :+,
     :<,
     :<=,
-    :===,
     :==,
-    :!==,
-    :!=,
-    :self
+    :===,
+    :>,
+    :>=,
+    :abs,
+    :band,
+    :bnot,
+    :bor,
+    :bsl,
+    :bsr,
+    :bxor,
+    :count,
+    :div,
+    :element,
+    :hd,
+    :map_get,
+    :node,
+    :rem,
+    :round,
+    :self,
+    :size,
+    :tl,
+    :trunc
   ]
 
   @guard_functions @bool_functions ++ @extra_guard_functions
 
   @action_functions [
-    :set_seq_token,
+    :caller_line,
+    :caller,
+    :current_stacktrace,
+    :disable_trace,
+    :display,
+    :enable_trace,
+    :exception_trace,
     :get_seq_token,
     :message,
-    :return_trace,
-    :exception_trace,
     :process_dump,
-    :enable_trace,
-    :disable_trace,
-    :trace,
-    :display,
-    :caller,
-    :caller_line,
-    :current_stacktrace,
+    :return_trace,
+    :set_seq_token,
     :set_tcw,
-    :silent
+    :silent,
+    :trace
   ]
-  @elixir_erlang [===: :"=:=", !==: :"=/=", !=: :"/=", <=: :"=<", and: :andalso, or: :orelse]
+
+  @elixir_erlang [
+    !=: :"/=",
+    !==: :"=/=",
+    <=: :"=<",
+    ===: :"=:=",
+    and: :andalso,
+    or: :orelse
+  ]
 
   Enum.each(@guard_functions, fn atom ->
     defp is_guard_function(unquote(atom)), do: true
@@ -302,14 +312,13 @@ defmodule Ex2ms do
   end
 
   defp raise_expression_error(expr) do
-    message = "illegal expression in matchspec:\n#{Macro.to_string(expr)}"
+    message = "illegal expression in matchspec: #{Macro.to_string(expr)}"
     raise ArgumentError, message: message
   end
 
   defp raise_parameter_error(expr) do
     message =
-      "illegal parameter to matchspec (has to be a single variable or tuple):\n" <>
-        Macro.to_string(expr)
+      "illegal parameter to matchspec (has to be a single variable or tuple): #{Macro.to_string(expr)}"
 
     raise ArgumentError, message: message
   end

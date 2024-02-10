@@ -86,6 +86,32 @@ defmodule Ex2msTest do
     assert ms == [{:"$1", [], [:"$1", 0]}]
   end
 
+  test "guard function" do
+    ms =
+      fun do
+        x when is_list(x) -> x
+      end
+
+    assert ms == [{:"$1", [is_list: :"$1"], [:"$1"]}]
+
+    ms =
+      fun do
+        map when is_map_key(map, :key) -> map
+      end
+
+    assert ms == [{:"$1", [{:is_map_key, :"$1", :key}], [:"$1"]}]
+  end
+
+  test "invalid guard function" do
+    assert_raise ArgumentError, "illegal expression in matchspec: does_not_exist(x)", fn ->
+      delay_compile(
+        fun do
+          x when does_not_exist(x) -> x
+        end
+      )
+    end
+  end
+
   test "custom guard macro" do
     ms =
       fun do
@@ -117,7 +143,7 @@ defmodule Ex2msTest do
   end
 
   test "map is illegal alone in body" do
-    assert_raise ArgumentError, "illegal expression in matchspec:\n%{x: z}", fn ->
+    assert_raise ArgumentError, "illegal expression in matchspec: %{x: z}", fn ->
       delay_compile(
         fun do
           {x, z} -> %{x: z}
@@ -137,7 +163,7 @@ defmodule Ex2msTest do
 
   test "map is not allowed in the head of function" do
     assert_raise ArgumentError,
-                 "illegal parameter to matchspec (has to be a single variable or tuple):\n%{x: :\"$1\"}",
+                 "illegal parameter to matchspec (has to be a single variable or tuple): %{x: :\"$1\"}",
                  fn ->
                    delay_compile(
                      fun do
@@ -155,7 +181,7 @@ defmodule Ex2msTest do
 
   test "raise on invalid fun head" do
     assert_raise ArgumentError,
-                 "illegal parameter to matchspec (has to be a single variable or tuple):\n[x, y]",
+                 "illegal parameter to matchspec (has to be a single variable or tuple): [x, y]",
                  fn ->
                    delay_compile(
                      fun do
@@ -165,7 +191,7 @@ defmodule Ex2msTest do
                  end
 
     assert_raise ArgumentError,
-                 "illegal parameter to matchspec (has to be a single variable or tuple):\ny = z",
+                 "illegal parameter to matchspec (has to be a single variable or tuple): y = z",
                  fn ->
                    delay_compile(
                      fun do
@@ -175,7 +201,7 @@ defmodule Ex2msTest do
                  end
 
     assert_raise ArgumentError,
-                 "illegal parameter to matchspec (has to be a single variable or tuple):\n123",
+                 "illegal parameter to matchspec (has to be a single variable or tuple): 123",
                  fn ->
                    delay_compile(
                      fun do
@@ -198,7 +224,7 @@ defmodule Ex2msTest do
   end
 
   test "invalid expression" do
-    assert_raise ArgumentError, "illegal expression in matchspec:\nx = y", fn ->
+    assert_raise ArgumentError, "illegal expression in matchspec: x = y", fn ->
       delay_compile(
         fun do
           x -> x = y
@@ -206,7 +232,7 @@ defmodule Ex2msTest do
       )
     end
 
-    assert_raise ArgumentError, "illegal expression in matchspec:\nabc(x)", fn ->
+    assert_raise ArgumentError, "illegal expression in matchspec: abc(x)", fn ->
       delay_compile(
         fun do
           x -> abc(x)
