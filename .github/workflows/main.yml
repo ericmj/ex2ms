@@ -5,18 +5,18 @@ on: [push, pull_request]
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
         include:
-          - erlang: "24.0"
-            elixir: "1.12.2"
+          - erlang: "26.2"
+            elixir: "1.16.1"
             lint: true
-          - erlang: "19.3"
+          - erlang: "21.3"
             elixir: "1.7.4"
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
 
       - name: Install OTP and Elixir
         uses: erlef/setup-beam@v1

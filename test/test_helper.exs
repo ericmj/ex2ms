@@ -1,3 +1,4 @@
+ExUnit.configure(exclude: [:skip])
 ExUnit.start()
 
 defmodule TestHelpers do

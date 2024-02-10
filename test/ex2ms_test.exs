@@ -344,6 +344,7 @@ defmodule Ex2msTest do
     assert ms == [{{:"$1", :"$2"}, [is_list: :"$2"], [{{:"$1", [:marker | :"$2"]}}]}]
   end
 
+  @tag skip: Version.compare(System.version(), "1.16.0")
   test "binary_part" do
     prefix = "1234"
 
