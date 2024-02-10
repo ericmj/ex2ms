@@ -70,6 +70,8 @@ defmodule Ex2ms do
     :trace,
     :display,
     :caller,
+    :caller_line,
+    :current_stacktrace,
     :set_tcw,
     :silent
   ]
