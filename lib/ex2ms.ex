@@ -39,6 +39,7 @@ defmodule Ex2ms do
     :>=,
     :abs,
     :band,
+    :binary_part,
     :bnot,
     :bor,
     :bsl,

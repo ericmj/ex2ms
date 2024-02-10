@@ -1,6 +1,8 @@
 defmodule Ex2msTest do
   use ExUnit.Case, async: true
 
+  doctest Ex2ms
+
   require Record
   Record.defrecordp(:user, [:name, :age])
 
@@ -342,5 +344,15 @@ defmodule Ex2msTest do
     assert ms == [{{:"$1", :"$2"}, [is_list: :"$2"], [{{:"$1", [:marker | :"$2"]}}]}]
   end
 
-  doctest Ex2ms
+  test "binary_part" do
+    prefix = "1234"
+
+    ms =
+      fun do
+        bid when binary_part(bid, 0, 4) == ^prefix -> bid
+      end
+
+    assert ms == [{:"$1", [{:==, {:binary_part, :"$1", 0, 4}, {:const, prefix}}], [:"$1"]}]
+    assert {:ok, "12345"} == :ets.test_ms("12345", ms)
+  end
 end
