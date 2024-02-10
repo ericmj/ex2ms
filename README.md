@@ -1,7 +1,5 @@
 # ex2ms
 
-[![Build Status](https://travis-ci.org/ericmj/ex2ms.svg?branch=master)](https://travis-ci.org/ericmj/ex2ms)
-
 Translates Elixir functions to match specifications for use with `ets`.
 Requires Elixir 1.0 or later.
 
