@@ -1,7 +1,7 @@
 defmodule Ex2ms.Mixfile do
   use Mix.Project
 
-  @version "1.6.1"
+  @version "1.7.0"
   @github_url "https://github.com/ericmj/ex2ms"
 
   def project do
@@ -9,11 +9,10 @@ defmodule Ex2ms.Mixfile do
       app: :ex2ms,
       version: @version,
       elixir: "~> 1.7",
-      source_url: @github_url,
-      docs: [source_ref: "v#{@version}", main: "readme", extras: ["README.md"]],
-      description: description(),
-      package: package(),
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
+      description: "Translates Elixir functions to match specifications for use with `ets`.",
+      package: package()
     ]
   end
 
@@ -25,10 +24,13 @@ defmodule Ex2ms.Mixfile do
     [{:ex_doc, ">= 0.0.0", only: :dev}]
   end
 
-  defp description do
-    """
-    Translates Elixir functions to match specifications for use with `ets`.
-    """
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      source_url: @github_url,
+      main: "readme",
+      extras: ["README.md"]
+    ]
   end
 
   defp package do
