@@ -50,6 +50,8 @@ defmodule Ex2ms do
     :element,
     :hd,
     :map_get,
+    :max,
+    :min,
     :node,
     :rem,
     :round,
